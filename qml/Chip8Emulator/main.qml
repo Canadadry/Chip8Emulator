@@ -19,7 +19,7 @@ Column {
 		if(!loaded)
 		{
 		    chip8.loadROM();
-		    memoryView.positionViewAtIndex(0x200,ListView.Beginning)
+		    memoryView.positionViewAtIndex(0x100,ListView.Beginning)
 		    loaded = true;
 		    chip8.stepping();
 		}
@@ -59,11 +59,23 @@ Column {
 	    id:memoryView
 	    width: 200
 	    height: 200
-	    model:4096
-	    delegate:Text {id:text
-		Connections{ target: chip8; onStepping:{text.text=index.toString(16)+ " " + chip8.readMemoryAt(index).toString(16)}}
+	    model:4096/2
+	    delegate: Row{
+		Text {text: " "+(index*2).toString(16)+" : "}
+		TextInput{id:lsb; text: chip8.readMemoryAt((index*2  )).toString(16); onAccepted:{ chip8.writeByteInMemoryAt(index*2  ,parseInt("0x"+text)) } }
+		TextInput{id:msb; text: chip8.readMemoryAt((index*2+1)).toString(16); onAccepted:{ chip8.writeByteInMemoryAt(index*2+1,parseInt("0x"+text)) } }
+
+		Connections{
+		    target: chip8;
+		    onStepping:{
+			msb.text=chip8.readMemoryAt((index*2  )).toString(16);
+			lsb.text=chip8.readMemoryAt((index*2+1)).toString(16);
+		    }
+
+		}
 	    }
 	}
     }
-
 }
+
+

@@ -13,7 +13,7 @@ QMLChip8Emulator::QMLChip8Emulator(QQuickPaintedItem *parent)
 
 void QMLChip8Emulator::paint(QPainter * painter)
 {
-    qDebug() << "painting to "<< QRect(0,0,width(),height());
+    //qDebug() << "painting to "<< QRect(0,0,width(),height());
     painter->drawImage(QRect(0,0,width(),height()),m_screen,QRect(0,0,Chip8::Screen::SCREEN_WIDTH,Chip8::Screen::SCREEN_HEIGHT));
 }
 
@@ -25,14 +25,14 @@ void  QMLChip8Emulator::clearScreen()
 
 void  QMLChip8Emulator::setPixel(int x, int y, Pixel p)
 {
-    qDebug() << "setting pixel at ( " << x <<","<<y<<") of color " << ((p==Chip8::Screen::WHITE_PIXEL)?"White":"Black");
+   // qDebug() << "setting pixel at ( " << x <<","<<y<<") of color " << ((p==Chip8::Screen::WHITE_PIXEL)?"White":"Black");
     m_screen.setPixel(x,y,p==Chip8::Screen::WHITE_PIXEL?qRgb(255,255,255):qRgb(0,0,0));
     update();
 }
 
 Chip8::Screen::Pixel QMLChip8Emulator::getPixel(int x, int y) const
 {
-    return m_screen.pixel(x,y) != qRgb(255,255,255) ? Chip8::Screen::WHITE_PIXEL : Chip8::Screen::BLACK_PIXEL;
+    return m_screen.pixel(x,y) == qRgb(255,255,255) ? Chip8::Screen::WHITE_PIXEL : Chip8::Screen::BLACK_PIXEL;
 }
 
 void QMLChip8Emulator::step()
@@ -80,19 +80,17 @@ void QMLChip8Emulator::step()
 
 void QMLChip8Emulator::loadROM()
 {
-    QString fileName ;//= QFileDialog::getOpenFileName(0,"Open Rom");
-//    fileName = "/Users/mooglwy/Dropbox/programmation/Chip8Emulator/ROM/BC_test.ch8";
-    fileName = "/Users/mooglwy/Desktop/test.ch8";
+    QString fileName = QFileDialog::getOpenFileName(0,"Open Rom",QDir::home().path());
     FILE* fd = fopen(fileName.toStdString().c_str(),"r");
 
-    qDebug() << "trying to open " << fileName;
+//    qDebug() << "trying to open " << QDir::home().path();
     if(fd != NULL)
     {
-	qDebug() << "opening ";
+//	qDebug() << "opening ";
 
 	char data[Chip8::CPU::MEMORY_SIZE];
 	int size = fread(data,1,Chip8::CPU::MEMORY_SIZE,fd);
-	qDebug() << "read " << size;
+//	qDebug() << "read " << size;
 	if(size>0)
 	{
 	    m_cpu.loadROM((const unsigned char*)data,size);
@@ -158,7 +156,6 @@ void QMLChip8Emulator::setPC(int new_value)
     if (m_cpu.pc != new_value)
     {
 	m_cpu.pc = new_value;
-	qDebug()<<"new pc "<<new_value;
 	emit pcChanged();
     }
 }

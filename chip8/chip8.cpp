@@ -508,8 +508,8 @@ void CPU::step()
     OpCode op = getCurrentOpCode();
     pc+=2;
     Instruction* instruction = findInstruction(op);
-    printf("excuting opcode %x from @ %x interpreted has %s\n",op,pc-2,instruction->name.c_str());
-    fflush(stdout);
+    //printf("excuting opcode %x from @ %x interpreted has %s\n",op,pc-2,instruction->name.c_str());
+    //fflush(stdout);
     instruction->action(op);
     soundCounter --;
     if(soundCounter <0 )soundCounter=0;
