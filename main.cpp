@@ -3,9 +3,12 @@
 #include <QQmlEngine>
 #include "qmlchip8emulator.h"
 #include <QApplication>
+#include <cmath>
+#include <ctime>
 
 int main(int argc, char *argv[])
 {
+    srand(time(NULL));
     QApplication app(argc, argv);
 
     qmlRegisterType<QMLChip8Emulator>("Chip8", 1, 0, "Emulator");

@@ -546,7 +546,7 @@ bool CPU::drawByteAndCheckCollision(Byte x, Byte y, Byte b )
     for(int i = 0; i<8;i++)
     {
 	if(x+i >= Screen::SCREEN_WIDTH) return ret;
-	Screen::Pixel p = (b>>i & 1) ==1 ? Screen::WHITE_PIXEL : Screen::BLACK_PIXEL;
+	Screen::Pixel p = (b>>(7-i) & 1) ==1 ? Screen::WHITE_PIXEL : Screen::BLACK_PIXEL;
 	if(p == Screen::WHITE_PIXEL)
 	{
 	    if(screen->getPixel(x+i,y) == Screen::WHITE_PIXEL)
