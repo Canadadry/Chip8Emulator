@@ -62,8 +62,8 @@ Column {
 	    model:4096/2
 	    delegate: Row{
 		Text {text: " "+(index*2).toString(16)+" : "}
-		TextInput{id:lsb; text: chip8.readMemoryAt((index*2  )).toString(16); onAccepted:{ chip8.writeByteInMemoryAt(index*2  ,parseInt("0x"+text)) } }
-		TextInput{id:msb; text: chip8.readMemoryAt((index*2+1)).toString(16); onAccepted:{ chip8.writeByteInMemoryAt(index*2+1,parseInt("0x"+text)) } }
+		TextInput{id:msb; text: chip8.readMemoryAt((index*2  )).toString(16); onAccepted:{ chip8.writeByteInMemoryAt( parseInt("0x"+text), index*2) } }
+		TextInput{id:lsb; text: chip8.readMemoryAt((index*2+1)).toString(16); onAccepted:{ chip8.writeByteInMemoryAt( parseInt("0x"+text), index*2+1) } }
 
 		Connections{
 		    target: chip8;
