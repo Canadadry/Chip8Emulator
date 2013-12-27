@@ -72,8 +72,8 @@ void QMLChip8Emulator::step()
 
 void QMLChip8Emulator::loadROM()
 {
-    QString fileName ;//= QFileDialog::getOpenFileName(0,"Open Rom",QDir::home().path());
-    fileName = "/Users/mooglwy/Desktop/MAZE.ch8";
+    QString fileName = QFileDialog::getOpenFileName(0,"Open Rom",QDir::home().path());
+//    fileName = "/Users/mooglwy/Desktop/MAZE.ch8";
     FILE* fd = fopen(fileName.toStdString().c_str(),"r");
 
     //    qDebug() << "trying to open " << QDir::home().path();
