@@ -42,44 +42,35 @@ Column {
 	    }
 	    MouseArea{
 		anchors.fill: parent
-		onClicked:chip8.running ? chip8.play(0):chip8.play(1);
+		onClicked:chip8.running ? chip8.play(0):chip8.play(10);
 	    }
 	}
 
-
-
 	Row{
+	    id:register
 	    spacing: 50
 	    Column{
-		Row{Text {text: " op "} TextInput{ text: chip8.op.toString(16); onAccepted:{ chip8.op = parseInt("0x"+text) } } }
-		Row{Text {text: " pc "} TextInput{ text: chip8.pc.toString(16); onAccepted:{ chip8.pc = parseInt("0x"+text) } } }
-		Row{Text {text: " I  "} TextInput{ text: chip8.i.toString(16);  onAccepted:{ chip8.i  = parseInt("0x"+text) } } }
-		Row{Text {text: " v0 "} TextInput{ text: chip8.v0.toString(16); onAccepted:{ chip8.v0 = parseInt("0x"+text) } } }
-		Row{Text {text: " v1 "} TextInput{ text: chip8.v1.toString(16); onAccepted:{ chip8.v1 = parseInt("0x"+text) } } }
-		Row{Text {text: " v2 "} TextInput{ text: chip8.v2.toString(16); onAccepted:{ chip8.v2 = parseInt("0x"+text) } } }
-		Row{Text {text: " v3 "} TextInput{ text: chip8.v3.toString(16); onAccepted:{ chip8.v3 = parseInt("0x"+text) } } }
-		Row{Text {text: " v4 "} TextInput{ text: chip8.v4.toString(16); onAccepted:{ chip8.v4 = parseInt("0x"+text) } } }
-		Row{Text {text: " v5 "} TextInput{ text: chip8.v5.toString(16); onAccepted:{ chip8.v5 = parseInt("0x"+text) } } }
-		Row{Text {text: " v6 "} TextInput{ text: chip8.v6.toString(16); onAccepted:{ chip8.v6 = parseInt("0x"+text) } } }
-		Row{Text {text: " v7 "} TextInput{ text: chip8.v7.toString(16); onAccepted:{ chip8.v7 = parseInt("0x"+text) } } }
-		Row{Text {text: " v8 "} TextInput{ text: chip8.v8.toString(16); onAccepted:{ chip8.v8 = parseInt("0x"+text) } } }
-		Row{Text {text: " v9 "} TextInput{ text: chip8.v9.toString(16); onAccepted:{ chip8.v9 = parseInt("0x"+text) } } }
-		Row{Text {text: " vA "} TextInput{ text: chip8.vA.toString(16); onAccepted:{ chip8.vA = parseInt("0x"+text) } } }
-		Row{Text {text: " vB "} TextInput{ text: chip8.vB.toString(16); onAccepted:{ chip8.vB = parseInt("0x"+text) } } }
-		Row{Text {text: " vC "} TextInput{ text: chip8.vC.toString(16); onAccepted:{ chip8.vC = parseInt("0x"+text) } } }
-		Row{Text {text: " vD "} TextInput{ text: chip8.vD.toString(16); onAccepted:{ chip8.vD = parseInt("0x"+text) } } }
-		Row{Text {text: " vE "} TextInput{ text: chip8.vE.toString(16); onAccepted:{ chip8.vE = parseInt("0x"+text) } } }
-		Row{Text {text: " vF "} TextInput{ text: chip8.vF.toString(16); onAccepted:{ chip8.vF = parseInt("0x"+text) } } }
+		Repeater{
+		    model:["op","pc","i","v0","v1","v2","v3","v4","v5","v6","v7","v8","v9","vA","vB","vC","vD","vE","vF"]
+		    delegate:Row{
+			Text {text: " "+modelData+" ";width: 25}
+			Text {text: ": "}
+			TextInput{
+			    text: eval("chip8."+modelData+".toString(16)")
+			    onAccepted: eval("chip8."+modelData+" = parseInt(\"0x\"+text)")  }
+		    }
+		}
 	    }
 
 	    ListView{
 		id:memoryView
-		width: 200
-		height: 200
+		width: root.width/2
+		height: register.height
 		model:4096/2
 		clip:true
 		delegate:  Row{
-		    Text {text: " "+(index*2).toString(16)+" : "}
+		    Text {text: " "+(index*2).toString(16);width: 25}
+		    Text {text: ": "}
 		    TextInput{id:value; text: chip8.readWordMemoryAt(index*2).toString(16); onAccepted:{ chip8.writeWordInMemoryAt( parseInt("0x"+text), index*2) } }
 		    Connections{ target: chip8; onStepping: value.text=chip8.readWordMemoryAt((index*2  )).toString(16); }
 		}
