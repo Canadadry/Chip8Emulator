@@ -290,7 +290,7 @@ public:
     InstructionCXNN(CPU& owner) :Instruction(owner,"CXNN",0xF000,0xC000){}
     virtual void  action(OpCode code) const{
 	int X = 	   getSubByte(code, 2) ;
-	m_owner.reg_V[X]=rand()%(code&0xFF);
+	m_owner.reg_V[X]=rand()%((code&0xFF)+1);
     }
 };
 
