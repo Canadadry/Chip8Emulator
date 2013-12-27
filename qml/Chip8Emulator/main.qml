@@ -12,16 +12,6 @@ Column {
 	property int  pixelSize: 5;
 	signal stepping
 
-	Timer{
-	    id:chip8Timer
-	    interval: 10
-	    repeat: true
-	    onTriggered: {
-		chip8.step();
-		chip8.stepping();
-	    }
-	}
-
 	MouseArea{
 	    anchors.fill: parent
 	    property bool loaded: false
@@ -48,11 +38,11 @@ Column {
 	    height: 30
 	    Text {
 		anchors.centerIn: parent
-		text:chip8Timer.running ? "playing":"pause"
+		text:chip8.running ? "playing":"pause"
 	    }
 	    MouseArea{
 		anchors.fill: parent
-		onClicked:chip8Timer.running ? chip8Timer.stop():chip8Timer.start();
+		onClicked:chip8.running ? chip8.play(0):chip8.play(1);
 	    }
 	}
 
@@ -61,8 +51,7 @@ Column {
 	Row{
 	    spacing: 50
 	    Column{
-
-		Text { text: " op "+ (chip8.readMemoryAt(chip8.pc)*256+chip8.readMemoryAt(chip8.pc+1)).toString(16) }
+		Row{Text {text: " op "} TextInput{ text: chip8.op.toString(16); onAccepted:{ chip8.op = parseInt("0x"+text) } } }
 		Row{Text {text: " pc "} TextInput{ text: chip8.pc.toString(16); onAccepted:{ chip8.pc = parseInt("0x"+text) } } }
 		Row{Text {text: " I  "} TextInput{ text: chip8.i.toString(16);  onAccepted:{ chip8.i  = parseInt("0x"+text) } } }
 		Row{Text {text: " v0 "} TextInput{ text: chip8.v0.toString(16); onAccepted:{ chip8.v0 = parseInt("0x"+text) } } }
@@ -89,19 +78,10 @@ Column {
 		height: 200
 		model:4096/2
 		clip:true
-		delegate: Row{
+		delegate:  Row{
 		    Text {text: " "+(index*2).toString(16)+" : "}
-		    TextInput{id:msb; text: chip8.readMemoryAt((index*2  )).toString(16); onAccepted:{ chip8.writeByteInMemoryAt( parseInt("0x"+text), index*2) } }
-		    TextInput{id:lsb; text: chip8.readMemoryAt((index*2+1)).toString(16); onAccepted:{ chip8.writeByteInMemoryAt( parseInt("0x"+text), index*2+1) } }
-
-		    Connections{
-			target: chip8;
-			onStepping:{
-			    msb.text=chip8.readMemoryAt((index*2  )).toString(16);
-			    lsb.text=chip8.readMemoryAt((index*2+1)).toString(16);
-			}
-
-		    }
+		    TextInput{id:value; text: chip8.readWordMemoryAt(index*2).toString(16); onAccepted:{ chip8.writeWordInMemoryAt( parseInt("0x"+text), index*2) } }
+		    Connections{ target: chip8; onStepping: value.text=chip8.readWordMemoryAt((index*2  )).toString(16); }
 		}
 	    }
 	}

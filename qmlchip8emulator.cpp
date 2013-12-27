@@ -2,32 +2,45 @@
 #include <QPainter>
 #include <QFileDialog>
 #include <QDebug>
+#include <QQuickWindow>
 
 QMLChip8Emulator::QMLChip8Emulator(QQuickPaintedItem *parent)
     : QQuickPaintedItem(parent)
     , m_screen(QSize(Chip8::Screen::SCREEN_WIDTH,Chip8::Screen::SCREEN_HEIGHT),QImage::Format_RGB32)
     , m_cpu(this)
+    , m_need_update(true)
+    , m_run_cpu_cycle(0)
+
 {
     m_screen.fill(QColor::fromRgb(0,0,0));
+    cycle();
 }
 
 void QMLChip8Emulator::paint(QPainter * painter)
 {
-    //qDebug() << "painting to "<< QRect(0,0,width(),height());
     painter->drawImage(QRect(0,0,width(),height()),m_screen,QRect(0,0,Chip8::Screen::SCREEN_WIDTH,Chip8::Screen::SCREEN_HEIGHT));
+}
+
+void QMLChip8Emulator::cycle()
+{
+    for(int i=0;i<m_run_cpu_cycle;i++) m_cpu.step();
+    if(m_need_update) update();
+    m_need_update= false;
+
+    QTimer::singleShot(20,this,SLOT(cycle()));
 }
 
 void  QMLChip8Emulator::clearScreen()
 {
     m_screen.fill(0);
-    update();
+    m_need_update = true;
 }
 
 void  QMLChip8Emulator::setPixel(int x, int y, Pixel p)
 {
-   // qDebug() << "setting pixel at ( " << x <<","<<y<<") of color " << ((p==Chip8::Screen::WHITE_PIXEL)?"White":"Black");
+    // qDebug() << "setting pixel at ( " << x <<","<<y<<") of color " << ((p==Chip8::Screen::WHITE_PIXEL)?"White":"Black");
     m_screen.setPixel(x,y,p==Chip8::Screen::WHITE_PIXEL?qRgb(255,255,255):qRgb(0,0,0));
-    update();
+    m_need_update = true;
 }
 
 Chip8::Screen::Pixel QMLChip8Emulator::getPixel(int x, int y) const
@@ -35,9 +48,76 @@ Chip8::Screen::Pixel QMLChip8Emulator::getPixel(int x, int y) const
     return m_screen.pixel(x,y) == qRgb(255,255,255) ? Chip8::Screen::WHITE_PIXEL : Chip8::Screen::BLACK_PIXEL;
 }
 
+void QMLChip8Emulator::play(int countByFrame)
+{
+    if(   m_run_cpu_cycle != countByFrame )
+    {
+	m_run_cpu_cycle = countByFrame;
+	emit runningChanged();
+	emitCPUChanged();
+    }
+}
+
+void QMLChip8Emulator::pause()
+{
+    play(0);
+}
+
+
 void QMLChip8Emulator::step()
 {
     m_cpu.step();
+    emitCPUChanged();
+}
+
+void QMLChip8Emulator::loadROM()
+{
+    QString fileName ;//= QFileDialog::getOpenFileName(0,"Open Rom",QDir::home().path());
+    fileName = "/Users/mooglwy/Desktop/MAZE.ch8";
+    FILE* fd = fopen(fileName.toStdString().c_str(),"r");
+
+    //    qDebug() << "trying to open " << QDir::home().path();
+    if(fd != NULL)
+    {
+	//	qDebug() << "opening ";
+
+	char data[Chip8::CPU::MEMORY_SIZE];
+	int size = fread(data,1,Chip8::CPU::MEMORY_SIZE,fd);
+	//	qDebug() << "read " << size;
+	if(size>0)
+	{
+	    m_cpu.loadROM((const unsigned char*)data,size);
+	}
+    }
+
+}
+
+int QMLChip8Emulator::readMemoryAt(int address)
+{
+    if( address >= 0 && address < Chip8::CPU::MEMORY_SIZE) return m_cpu.memory[address];
+    return 0;
+}
+
+
+int QMLChip8Emulator::readWordMemoryAt(int address)
+{
+    return (readMemoryAt(address) << 8) + readMemoryAt(address+1);
+}
+
+void QMLChip8Emulator::writeByteInMemoryAt(int byte, int address)
+{
+    if( address >= 0 && address < Chip8::CPU::MEMORY_SIZE) m_cpu.writeByteInMemoryAt(byte,address);
+}
+
+void QMLChip8Emulator::writeWordInMemoryAt(int word, int address)
+{
+    writeByteInMemoryAt((word & 0xFF00)>> 8,address);
+    writeByteInMemoryAt(word & 0xFF,address+1);
+}
+
+void QMLChip8Emulator::emitCPUChanged()
+{
+    emit opChanged();
     emit pcChanged();
     emit iChanged();
     emit syncCounterChanged();
@@ -75,42 +155,11 @@ void QMLChip8Emulator::step()
     emit stackDChanged();
     emit stackEChanged();
     emit stackFChanged();
-
 }
 
-void QMLChip8Emulator::loadROM()
-{
-    QString fileName = QFileDialog::getOpenFileName(0,"Open Rom",QDir::home().path());
-    FILE* fd = fopen(fileName.toStdString().c_str(),"r");
+bool QMLChip8Emulator::running()    const { return (m_run_cpu_cycle != 0);}
 
-//    qDebug() << "trying to open " << QDir::home().path();
-    if(fd != NULL)
-    {
-//	qDebug() << "opening ";
-
-	char data[Chip8::CPU::MEMORY_SIZE];
-	int size = fread(data,1,Chip8::CPU::MEMORY_SIZE,fd);
-//	qDebug() << "read " << size;
-	if(size>0)
-	{
-	    m_cpu.loadROM((const unsigned char*)data,size);
-	}
-    }
-
-}
-
-int QMLChip8Emulator::readMemoryAt(int address)
-{
-    if( address >= 0 && address < Chip8::CPU::MEMORY_SIZE) return m_cpu.memory[address];
-    return 0;
-}
-
-void QMLChip8Emulator::writeByteInMemoryAt(int byte, int address)
-{
-    if( address >= 0 && address < Chip8::CPU::MEMORY_SIZE) m_cpu.memory[address] = byte;
-}
-
-
+int QMLChip8Emulator::op()           const { return (m_cpu.memory[m_cpu.pc]<<8)+m_cpu.memory[m_cpu.pc+1]; }
 int QMLChip8Emulator::pc()           const { return m_cpu.pc;           }
 int QMLChip8Emulator::i()            const { return m_cpu.reg_I;            }
 int QMLChip8Emulator::syncCounter()  const { return m_cpu.synchronisationCounter;  }

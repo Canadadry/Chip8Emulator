@@ -2,12 +2,14 @@
 #define QMLCHIP8EMULATOR_H
 
 #include <QQuickPaintedItem>
+#include <QTimer>
 #include <QImage>
 #include <chip8/chip8.h>
 
 class QMLChip8Emulator : public QQuickPaintedItem, public Chip8::Screen
 {
     Q_OBJECT
+    Q_PROPERTY(int op READ op             NOTIFY opChanged)
     Q_PROPERTY(int pc READ pc WRITE setPC NOTIFY pcChanged)
     Q_PROPERTY(int  i READ  i WRITE setI  NOTIFY  iChanged)
     Q_PROPERTY(int syncCounter READ syncCounter WRITE setSyncCounter NOTIFY syncCounterChanged)
@@ -46,6 +48,7 @@ class QMLChip8Emulator : public QQuickPaintedItem, public Chip8::Screen
     Q_PROPERTY(int stackE READ stackE WRITE setStackE NOTIFY stackEChanged)
     Q_PROPERTY(int stackF READ stackF WRITE setStackF NOTIFY stackFChanged)
 
+    Q_PROPERTY(bool running READ running  NOTIFY runningChanged)
 public:
     explicit QMLChip8Emulator(QQuickPaintedItem *parent = 0);
 
@@ -55,11 +58,16 @@ public:
     virtual void  setPixel(int x, int y, Pixel p);
     virtual Pixel getPixel(int x, int y) const;
 
+    Q_INVOKABLE void play(int countByFrame);
+    Q_INVOKABLE void pause();
     Q_INVOKABLE void step();
     Q_INVOKABLE void loadROM();
     Q_INVOKABLE int readMemoryAt(int address);
+    Q_INVOKABLE int readWordMemoryAt(int address);
     Q_INVOKABLE void writeByteInMemoryAt(int byte, int address);
+    Q_INVOKABLE void writeWordInMemoryAt(int word, int address);
 
+    int op() const;
     int pc() const;
     int i() const;
     int syncCounter() const;
@@ -98,6 +106,8 @@ public:
     int stackD() const;
     int stackE() const;
     int stackF() const;
+
+    bool running() const;
 
 public slots:
     void setPC(int new_value);
@@ -139,6 +149,7 @@ public slots:
     void setStackF(int new_value);
 
 signals:
+    void opChanged();
     void pcChanged();
     void iChanged();
     void syncCounterChanged();
@@ -177,9 +188,19 @@ signals:
     void stackEChanged();
     void stackFChanged();
 
+    void runningChanged();
+
+protected slots:
+    void cycle();
+    void emitCPUChanged();
+
+
 private:
     QImage m_screen;
     Chip8::CPU m_cpu;
+    bool m_need_update;
+    int m_run_cpu_cycle;
+
 };
 
 #endif // QMLCHIP8EMULATOR_H
