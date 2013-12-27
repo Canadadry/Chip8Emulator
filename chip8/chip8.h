@@ -65,6 +65,8 @@ public:
 
 
     bool drawByteAndCheckCollision(Byte x, Byte y, Byte b );
+    void writeByteInMemoryAt(int byte, int address);
+    void writeWordInMemoryAt(int msb, int lsb, int address);
 
 private:
     std::vector<Instruction*> m_instructionSet;
@@ -77,7 +79,7 @@ private:
     Instruction* findInstruction(OpCode op);
 
     //optimization
-    //Instruction* memoryAsInstruction[MEMORY_SIZE/2];
+    Instruction* memoryAsInstruction[MEMORY_SIZE>>1];
 };
 }
 

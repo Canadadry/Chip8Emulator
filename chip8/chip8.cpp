@@ -1,5 +1,6 @@
 #include "chip8.h"
 #include <cstdio>
+#include <cstdlib>
 
 namespace Chip8 {
 
@@ -425,9 +426,12 @@ public:
     InstructionFX33(CPU& owner) :Instruction(owner,"FX33",0xF0FF,0xF033){}
     virtual void  action(OpCode code) const{
 	int X = 	   getSubByte(code, 2) ;
-	m_owner.memory[m_owner.reg_I+0] = (short) (m_owner.reg_V[X]/100) ;
-	m_owner.memory[m_owner.reg_I+1] = (short) ((int)(m_owner.reg_V[X]/10 ) - (int)(m_owner.reg_V[X]/100)*10)  ;
-	m_owner.memory[m_owner.reg_I+2] = (short) ((m_owner.reg_V[X]) - (int)(m_owner.reg_V[X]/10)*10)  ;
+	m_owner.writeByteInMemoryAt((short) (m_owner.reg_V[X]/100)                                          ,m_owner.reg_I+0);
+	m_owner.writeByteInMemoryAt((short) ((int)(m_owner.reg_V[X]/10 ) - (int)(m_owner.reg_V[X]/100)*10)  ,m_owner.reg_I+1);
+	m_owner.writeByteInMemoryAt((short) ((m_owner.reg_V[X]) - (int)(m_owner.reg_V[X]/10)*10)            ,m_owner.reg_I+2);
+//	m_owner.memory[m_owner.reg_I+0] = (short) (m_owner.reg_V[X]/100) ;
+//	m_owner.memory[m_owner.reg_I+1] = (short) ((int)(m_owner.reg_V[X]/10 ) - (int)(m_owner.reg_V[X]/100)*10)  ;
+//	m_owner.memory[m_owner.reg_I+2] = (short) ((m_owner.reg_V[X]) - (int)(m_owner.reg_V[X]/10)*10)  ;
     }
 };
 
@@ -438,6 +442,7 @@ public:
     virtual void  action(OpCode code) const{
 	int X = 	   getSubByte(code, 2) ;
 	memcpy(&m_owner.memory[m_owner.reg_I], m_owner.reg_V,X*sizeof(Byte));
+	//m_cpu.writeByteInMemoryAt(m_owner.reg_V,X*sizeof(Byte) ,&m_owner.memory[m_owner.reg_I]);
     }
 };
 
@@ -448,6 +453,7 @@ public:
     virtual void  action(OpCode code) const{
 	int X = 	   getSubByte(code, 2) ;
 	memcpy(m_owner.reg_V,&m_owner.memory[m_owner.reg_I],X*sizeof(Byte));
+	//TODO FIX write
     }
 };
 
@@ -471,8 +477,8 @@ CPU::CPU(Screen* p_screen)
     , screen(p_screen)
     , keyboard()
 {
-    initialize();
     fillInstructionSet();
+    initialize();
 }
 
 void CPU::initialize()
@@ -488,16 +494,25 @@ void CPU::initialize()
     screen->clearScreen();
     memset(keyboard,0,sizeof(keyboard));
     loadFont();
-
+    for (int i=0;i<(MEMORY_SIZE>>1);i++)
+    {
+	memoryAsInstruction[i] = m_instructionSet.back();
+    }
 }
 
 bool CPU::loadROM(const unsigned char* rom, size_t size)
 {
     initialize();
 
+
     if(size < MEMORY_SIZE -START_ADDRESS)
     {
-	memcpy(&memory[START_ADDRESS],rom,size);
+//	memcpy(&memory[START_ADDRESS],rom,size);
+	for(size_t i =0 ;i<(size>>1);i++)
+	{
+	    writeWordInMemoryAt(rom[i*2],rom[i*2+1], (START_ADDRESS)+i*2);
+	}
+
 	return true;
     }
     return false;
@@ -506,8 +521,9 @@ bool CPU::loadROM(const unsigned char* rom, size_t size)
 void CPU::step()
 {
     OpCode op = getCurrentOpCode();
+    //Instruction* instruction = findInstruction(op);
+    Instruction* instruction = memoryAsInstruction[pc>>1];
     pc+=2;
-    Instruction* instruction = findInstruction(op);
     //printf("excuting opcode %x from @ %x interpreted has %s\n",op,pc-2,instruction->name.c_str());
     //fflush(stdout);
     instruction->action(op);
@@ -561,6 +577,20 @@ bool CPU::drawByteAndCheckCollision(Byte x, Byte y, Byte b )
 	}
     }
     return ret;
+}
+void CPU::writeByteInMemoryAt(int byte, int address)
+{
+    memory[address] = byte;
+    address -= address%2;
+    memoryAsInstruction[address>>1] = findInstruction((memory[address]<<8)+memory[address+1]);
+}
+
+void CPU::writeWordInMemoryAt(int msb, int lsb, int address)
+{
+    memory[address] = msb;
+    memory[address+1] = lsb;
+    memoryAsInstruction[address>>1] = findInstruction((msb<<8)+lsb );
+    //printf("has written %x at %x interpreted as %s\n",(((int)memory[address])<<8)+memory[address+1] ,address,memoryAsInstruction[address>>1]->name.c_str());
 }
 
 
